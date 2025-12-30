@@ -1,8 +1,9 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import Header from './components/Header';
 import NewsForm from './components/NewsForm';
 import ArticlePreview from './components/ArticlePreview';
+import LandingPage from './components/LandingView';
+import HistoryPage from './components/HistoryPage';
 import { NewsFormData, APIResponse, Language, Tone, HistoryItem } from './types';
 import { GoogleGenAI } from "@google/genai";
 
@@ -19,13 +20,16 @@ const INITIAL_FORM_DATA: NewsFormData = {
   photo: null,
 };
 
+type ViewState = 'landing' | 'app' | 'history';
+
 const App: React.FC = () => {
+  const [currentView, setCurrentView] = useState<ViewState>('landing');
+
   const [formData, setFormData] = useState<NewsFormData>(INITIAL_FORM_DATA);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<APIResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [searchHistory, setSearchHistory] = useState('');
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -77,7 +81,11 @@ const App: React.FC = () => {
       }
     });
     setError(null);
-    resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setCurrentView('app'); // Switch to App view
+    // Small delay to allow view to switch before scrolling
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   // Fixed signature: made event optional to satisfy () => void requirement in onRetry prop of ArticlePreview
@@ -174,111 +182,77 @@ const App: React.FC = () => {
     }
   };
 
-  const filteredHistory = history.filter(item =>
-    item.topic.toLowerCase().includes(searchHistory.toLowerCase()) ||
-    item.article.toLowerCase().includes(searchHistory.toLowerCase())
-  );
+  const navigateToApp = () => {
+    setCurrentView('app');
+    window.scrollTo(0, 0);
+  };
+
+  const navigateToHome = () => {
+    setCurrentView('landing');
+    window.scrollTo(0, 0);
+  };
+
+  const navigateToHistory = () => {
+    setCurrentView('history');
+    window.scrollTo(0, 0);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--light-bg)]">
-      <Header />
 
-      <main className="main-content">
-        <section className="animate-fadeIn">
-          <NewsForm
-            formData={formData}
-            isSubmitting={isSubmitting}
-            onFormChange={handleFormChange}
-            onClear={handleClearForm}
-            onSubmit={handleSubmit}
+      {currentView === 'landing' && (
+        <LandingPage
+          onGetStarted={navigateToApp}
+          onHistoryClick={navigateToHistory}
+        />
+      )}
+
+      {currentView === 'history' && (
+        <HistoryPage
+          history={history}
+          onLoadHistory={loadFromHistory}
+          onClearHistory={() => setHistory([])}
+          onBack={navigateToHome}
+        />
+      )}
+
+      {currentView === 'app' && (
+        <div className="animate-fadeIn">
+          <Header
+            onLogoClick={navigateToHome}
+            showBackBtn={true}
+            onBackClick={navigateToHome}
           />
-        </section>
 
+          <main className="main-content">
+            <section className="animate-fadeIn">
+              <NewsForm
+                formData={formData}
+                isSubmitting={isSubmitting}
+                onFormChange={handleFormChange}
+                onClear={handleClearForm}
+                onSubmit={handleSubmit}
+              />
+            </section>
 
+            <section className="lg:sticky lg:top-[140px] h-fit animate-fadeIn" ref={resultsRef}>
+              <ArticlePreview
+                result={result}
+                isSubmitting={isSubmitting}
+                error={error}
+                onRetry={() => handleSubmit()}
+                onReset={handleResetResult}
+              />
+            </section>
+          </main>
 
-        <section className="lg:sticky lg:top-[140px] h-fit animate-fadeIn" ref={resultsRef}>
-          <ArticlePreview
-            result={result}
-            isSubmitting={isSubmitting}
-            error={error}
-            onRetry={() => handleSubmit()}
-            onReset={handleResetResult}
-          />
-        </section>
-      </main>
-
-      <div className="container">
-
-        {/* History Section */}
-        {history.length > 0 && (
-          <section className="history-section">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-              <h2 className="history-title">📜 Recent Articles</h2>
-              <div className="relative w-full sm:w-[300px]">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-                <input
-                  type="text"
-                  placeholder="Search history..."
-                  className="w-full pl-10 pr-4 py-2 border border-[#e0e0e0] rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#FF9933] focus:border-[#FF9933] transition-all"
-                  value={searchHistory}
-                  onChange={(e) => setSearchHistory(e.target.value)}
-                />
-              </div>
-            </div>
-
-
-
-            <div className="history-list">
-              {filteredHistory.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => loadFromHistory(item)}
-                  className="history-item group"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <span className="text-[10px] font-bold text-[#FF9933] bg-[rgba(255,153,51,0.1)] px-2 py-0.5 rounded uppercase">
-                      {item.language}
-                    </span>
-                    <span className="text-[10px] text-gray-400 font-medium">
-                      {new Date(item.generatedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <h4 className="hindi-font">
-                    {item.topic}
-                  </h4>
-                  <p className="text-[11px] text-gray-500 line-clamp-3 mb-3 italic">
-                    {item.article.slice(0, 100)}...
-                  </p>
-                  <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold border-t border-gray-50 pt-3">
-                    <span>📊 {item.wordCount} words</span>
-                  </div>
-                </div>
-              ))}
-              {filteredHistory.length === 0 && (
-                <div className="col-span-full py-20 text-center text-gray-400 font-medium">
-                  No articles found matching your search.
-                </div>
-              )}
-            </div>
-
-            <div className="mt-8 flex justify-center">
-              <button
-                onClick={() => { if (window.confirm("Clear all history?")) setHistory([]); }}
-                className="text-xs font-bold text-[#dc3545] hover:text-[#c82333] transition-colors flex items-center gap-1 uppercase tracking-widest"
-              >
-                🗑️ Clear All History
-              </button>
-            </div>
-          </section>
-        )
-        }
-      </div>
-
-      <footer className="p-10 text-center text-[#666] text-sm border-t border-[#e0e0e0] bg-white">
-        <p className="font-bold mb-1 uppercase tracking-widest text-[10px] text-[#FF9933]">AI News Generator</p>
-        <p className="hindi-font font-medium">&copy; 2024 - समाचार जेनरेटर • Powered by Gemini AI</p>
-        <p className="text-[10px] mt-4 opacity-50">This tool uses artificial intelligence. Please verify facts before publishing.</p>
-      </footer>
+          <footer className="p-10 text-center text-[#666] text-sm border-t border-[#e0e0e0] bg-white">
+            <p className="font-bold mb-1 uppercase tracking-widest text-[10px] text-[#FF9933]">AI News Generator</p>
+            <p className="hindi-font font-medium">&copy; 2024 - समाचार जेनरेटर • Powered by Gemini AI</p>
+            <p className="text-[10px] mt-4 opacity-50">This tool uses artificial intelligence. Please verify facts before publishing.</p>
+          </footer>
+        </div>
+      )}
     </div>
   );
 };

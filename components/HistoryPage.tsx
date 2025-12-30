@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Header from './Header';
+import AdBanner from './AdBanner';
 import { HistoryItem } from '../types';
 
 interface HistoryPageProps {
@@ -45,31 +46,42 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ history, onLoadHistory, onCle
                     </div>
                 </div>
 
+                {/* Top Ad Banner */}
+                <AdBanner slot="YOUR_HISTORY_AD_SLOT" format="horizontal" />
+
                 <div className="history-list">
-                    {filteredHistory.map((item) => (
-                        <div
-                            key={item.id}
-                            onClick={() => onLoadHistory(item)}
-                            className="history-item group bg-white"
-                        >
-                            <div className="flex justify-between items-start mb-3">
-                                <span className="text-[10px] font-bold text-[#FF9933] bg-[rgba(255,153,51,0.1)] px-2 py-0.5 rounded uppercase">
-                                    {item.language}
-                                </span>
-                                <span className="text-[10px] text-gray-400 font-medium">
-                                    {new Date(item.generatedAt).toLocaleDateString()}
-                                </span>
+                    {filteredHistory.map((item, index) => (
+                        <React.Fragment key={item.id}>
+                            <div
+                                onClick={() => onLoadHistory(item)}
+                                className="history-item group bg-white"
+                            >
+                                <div className="flex justify-between items-start mb-3">
+                                    <span className="text-[10px] font-bold text-[#FF9933] bg-[rgba(255,153,51,0.1)] px-2 py-0.5 rounded uppercase">
+                                        {item.language}
+                                    </span>
+                                    <span className="text-[10px] text-gray-400 font-medium">
+                                        {new Date(item.generatedAt).toLocaleDateString()}
+                                    </span>
+                                </div>
+                                <h4 className="hindi-font">
+                                    {item.topic}
+                                </h4>
+                                <p className="text-[11px] text-gray-500 line-clamp-3 mb-3 italic">
+                                    {item.article.slice(0, 100)}...
+                                </p>
+                                <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold border-t border-gray-50 pt-3">
+                                    <span>📊 {item.wordCount} words</span>
+                                </div>
                             </div>
-                            <h4 className="hindi-font">
-                                {item.topic}
-                            </h4>
-                            <p className="text-[11px] text-gray-500 line-clamp-3 mb-3 italic">
-                                {item.article.slice(0, 100)}...
-                            </p>
-                            <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold border-t border-gray-50 pt-3">
-                                <span>📊 {item.wordCount} words</span>
-                            </div>
-                        </div>
+
+                            {/* Ad after every 3 items */}
+                            {(index + 1) % 3 === 0 && index < filteredHistory.length - 1 && (
+                                <div className="col-span-full">
+                                    <AdBanner slot="YOUR_FEED_AD_SLOT" format="auto" />
+                                </div>
+                            )}
+                        </React.Fragment>
                     ))}
                     {filteredHistory.length === 0 && (
                         <div className="col-span-full py-20 text-center text-gray-400 font-medium flex flex-col items-center gap-4">

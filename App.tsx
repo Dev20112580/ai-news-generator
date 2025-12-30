@@ -4,6 +4,8 @@ import NewsForm from './components/NewsForm';
 import ArticlePreview from './components/ArticlePreview';
 import LandingPage from './components/LandingView';
 import HistoryPage from './components/HistoryPage';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import AdBanner from './components/AdBanner';
 import { NewsFormData, APIResponse, Language, Tone, HistoryItem } from './types';
 import { GoogleGenAI } from "@google/genai";
 
@@ -20,7 +22,7 @@ const INITIAL_FORM_DATA: NewsFormData = {
   photo: null,
 };
 
-type ViewState = 'landing' | 'app' | 'history';
+type ViewState = 'landing' | 'app' | 'history' | 'privacy';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>('landing');
@@ -203,6 +205,11 @@ const App: React.FC = () => {
     window.scrollTo(0, 0);
   };
 
+  const navigateToPrivacy = () => {
+    setCurrentView('privacy');
+    window.scrollTo(0, 0);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[var(--light-bg)]">
 
@@ -222,6 +229,10 @@ const App: React.FC = () => {
         />
       )}
 
+      {currentView === 'privacy' && (
+        <PrivacyPolicy onBack={navigateToHome} />
+      )}
+
       {currentView === 'app' && (
         <div className="animate-fadeIn">
           <Header
@@ -229,6 +240,9 @@ const App: React.FC = () => {
             showBackBtn={true}
             onBackClick={navigateToHome}
           />
+
+          {/* Ad Banner - After Header */}
+          <AdBanner slot="YOUR_AD_SLOT_1" format="horizontal" />
 
           <main className="main-content">
             <section className="animate-fadeIn">
@@ -252,10 +266,21 @@ const App: React.FC = () => {
             </section>
           </main>
 
+          {/* Ad Banner - Before Footer */}
+          <AdBanner slot="YOUR_AD_SLOT_2" format="horizontal" />
+
           <footer className="p-10 text-center text-[#666] text-sm border-t border-[#e0e0e0] bg-white">
             <p className="font-bold mb-1 uppercase tracking-widest text-[10px] text-[#FF9933]">AI News Generator</p>
             <p className="hindi-font font-medium">&copy; 2024 - समाचार जेनरेटर • Powered by Gemini AI</p>
             <p className="text-[10px] mt-4 opacity-50">This tool uses artificial intelligence. Please verify facts before publishing.</p>
+            <p className="mt-4">
+              <button
+                onClick={navigateToPrivacy}
+                className="text-[#FF9933] hover:underline text-xs font-medium uppercase tracking-widest"
+              >
+                Privacy Policy
+              </button>
+            </p>
           </footer>
         </div>
       )}

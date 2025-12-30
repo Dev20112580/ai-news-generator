@@ -95,8 +95,14 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      // Use process.env.API_KEY directly as per SDK guidelines
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Use Vite's import.meta.env for environment variables
+      const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+
+      if (!API_KEY) {
+        throw new Error('❌ API Key not found. Please add VITE_GOOGLE_API_KEY to your .env.local file.');
+      }
+
+      const ai = new GoogleGenAI({ apiKey: API_KEY });
 
       const systemInstruction = `You are a professional journalist specializing in news writing. 
       Write a news article with the following details:
